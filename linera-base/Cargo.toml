@@ -55,6 +55,7 @@ test-strategy = { workspace = true, optional = true }
 thiserror.workspace = true
 tokio = { workspace = true, features = ["time"] }
 tokio-stream.workspace = true
+tokio-util.workspace = true
 tracing.workspace = true
 tracing-subscriber = { workspace = true, features = ["json", "fmt", "ansi"] }
 wasm-bindgen = { workspace = true, optional = true }
