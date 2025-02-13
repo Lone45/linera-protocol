@@ -25,7 +25,7 @@ use linera_core::{
 };
 use linera_version::VersionInfo;
 use tonic::{Code, IntoRequest, Request, Status};
-use tracing::{debug, error, info, instrument, warn};
+use tracing::{debug, error, info, instrument, warn, Instrument};
 #[cfg(not(web))]
 use {
     super::GrpcProtoConversionError,
@@ -331,11 +331,11 @@ impl ValidatorNode for GrpcClient {
                     retry_count = 0;
                     return future::Either::Left(future::ready(true));
                 };
-                let _enter_span = span.enter();
-                if !Self::is_retryable(status) || retry_count >= max_retries {
+                if !Self::is_retryable(status).instrument(span.clone()).inner()
+                    || retry_count >= max_retries
+                {
                     return future::Either::Left(future::ready(false));
                 }
-                drop(_enter_span);
                 let delay = retry_delay.saturating_mul(retry_count);
                 retry_count += 1;
                 future::Either::Right(async move {
