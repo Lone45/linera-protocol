@@ -114,7 +114,8 @@ pub async fn handle_net_up_kubernetes(
     no_build: bool,
     docker_image_name: String,
     policy: ResourceControlPolicy,
-    with_faucet_chain: Option<u32>,
+    with_faucet: bool,
+    faucet_chain: Option<u32>,
     faucet_port: NonZeroU16,
     faucet_amount: Amount,
 ) -> anyhow::Result<()> {
@@ -145,7 +146,8 @@ pub async fn handle_net_up_kubernetes(
         extra_wallets,
         &mut net,
         client,
-        with_faucet_chain,
+        with_faucet,
+        faucet_chain,
         faucet_port,
         faucet_amount,
     )
@@ -165,7 +167,8 @@ pub async fn handle_net_up_service(
     path: &Option<String>,
     storage: &Option<String>,
     external_protocol: String,
-    with_faucet_chain: Option<u32>,
+    with_faucet: bool,
+    faucet_chain: Option<u32>,
     faucet_port: NonZeroU16,
     faucet_amount: Amount,
 ) -> anyhow::Result<()> {
@@ -210,7 +213,8 @@ pub async fn handle_net_up_service(
         extra_wallets,
         &mut net,
         client,
-        with_faucet_chain,
+        with_faucet,
+        faucet_chain,
         faucet_port,
         faucet_amount,
     )
@@ -240,7 +244,8 @@ async fn create_wallets_and_faucets(
     extra_wallets: Option<usize>,
     net: &mut impl LineraNet,
     client: ClientWrapper,
-    with_faucet_chain: Option<u32>,
+    with_faucet: bool,
+    faucet_chain: Option<u32>,
     faucet_port: NonZeroU16,
     faucet_amount: Amount,
 ) -> Result<Option<FaucetService>, anyhow::Error> {
@@ -319,13 +324,14 @@ async fn create_wallets_and_faucets(
     }
 
     // Run the faucet,
-    let faucet_service = if let Some(faucet_chain) = with_faucet_chain {
+    let faucet_service = if with_faucet {
+        let faucet_chain = if let Some(faucet_chain) = faucet_chain {
+            ChainId::root(faucet_chain)
+        } else {
+            default_chain
+        };
         let service = client
-            .run_faucet(
-                Some(faucet_port.into()),
-                ChainId::root(faucet_chain),
-                faucet_amount,
-            )
+            .run_faucet(Some(faucet_port.into()), faucet_chain, faucet_amount)
             .await?;
         Some(service)
     } else {
